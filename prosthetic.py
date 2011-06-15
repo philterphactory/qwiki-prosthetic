@@ -99,6 +99,8 @@ class Qwiki(Prosthetic):
             logging.info("Got state")
             if self.should_post(state):
                 what = self.get_media_keywords_search(state)
+                # The first letter must be uppercase for Qwiki
+                what = what.title()
                 logging.info("should search for: %s" % what)
                 if self.qwiki_has_results_for(what):
                     logging.info("posting new qwiki: %s" % what)
