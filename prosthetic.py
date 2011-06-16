@@ -30,9 +30,7 @@ import re
 import time
 import urllib
 
-
-QWIKI_QUERY = "http://embed-api.qwiki.com/api/v1/search.json?count=1&"
-QWIKI_FOUND_NOTHING = """[]"""
+import qwiki
 
 
 class NoLocationFoundException(Exception):
@@ -61,31 +59,11 @@ class Qwiki(Prosthetic):
         location = locations[0]
         return location
 
-    def search_qwiki(self, what):
-        """Search qwiki to make sure we'll get a result in our embed.
-           Success is a string (of json), failure is None.
-           The results of this search are discarded after checking"""
-        query = urllib.urlencode({'q':what})
-        result = urllib.urlopen(QWIKI_QUERY + query).read()
-        return result
-
-    def qwiki_has_results_for(self, what):
-        """Check whether qwiki has any results for the given terms"""
-        response = self.search_qwiki(what)
-        result = response != QWIKI_FOUND_NOTHING
-        return result 
-
-    def qwiki_embed(self, query):
-        #FIXME: urlencode the query
-        url = "http://www.qwiki.com/q/#!/%s" % query
-        return '<a class="oembed" href="%s" data-oembed-type="video">%s</a>' %\
-            (url, url)
-
     def get_location_search(self, state):
         location = self.get_location(state)
         return location['city'] or location['region']
 
-    def get_media_keywords_search(self, state):
+    def get_media_keyword_search(self, state):
         return random.choice(state['combined_keywords'].split())
 
     def get_title(self, what):
@@ -98,16 +76,15 @@ class Qwiki(Prosthetic):
             state = self.get("/1/weavr/state/")
             logging.info("Got state")
             if self.should_post(state):
-                what = self.get_media_keywords_search(state)
-                # The first letter must be uppercase for Qwiki
-                what = what.title()
+                keyword = self.get_media_keyword_search(state)
+                what = qwiki.get_qwiki_embed(keyword)
                 logging.info("should search for: %s" % what)
-                if self.qwiki_has_results_for(what):
+                if what:
                     logging.info("posting new qwiki: %s" % what)
-                    embed = self.qwiki_embed(what)
+                    embed = qwiki.render_qwiki_embed(what)
                     self.post("/1/weavr/post/", {
                             "category":"article",
-                            "title":self.get_title(what),
+                            "title":self.get_title(keyword),
                             "body":embed,
                             "keywords":state["emotion"],
                             })
