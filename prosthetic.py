@@ -64,7 +64,10 @@ class Qwiki(Prosthetic):
         return location['city'] or location['region']
 
     def get_media_keyword_search(self, state):
-        return random.choice(state['combined_keywords'].split())
+        try:
+            return random.choice(state['combined_keywords'].split())
+        except IndexError:
+            return None
 
     def get_title(self, what):
         return "Curious about %s" % what
@@ -77,6 +80,8 @@ class Qwiki(Prosthetic):
             logging.info("Got state")
             if self.should_post(state):
                 keyword = self.get_media_keyword_search(state)
+                if not keyword:
+                    return "no combined keywords - not running"
                 what = qwiki.get_qwiki_embed(keyword)
                 logging.info("should search for: %s" % what)
                 if what:
@@ -96,6 +101,4 @@ class Qwiki(Prosthetic):
             logging.info("No location found")
             logging.info(str(e))
             pass
-        except Exception, e:
-            logging.error("Exception in qwiki prosthetic:\n%s" % str(e))
         return result
