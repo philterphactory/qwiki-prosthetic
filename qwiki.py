@@ -25,7 +25,7 @@
 import logging
 import random
 import re
-import simplejson
+from django.utils import simplejson
 import time
 import urllib
 
